@@ -443,6 +443,7 @@ public class DBWriter {
         }
         Permutor<FeedItem> permutor = FeedItemPermutors.getPermutor(sortOrder);
         permutor.reorder(queue);
+        LastPlayedFirst.apply(queue);
 
         // Replace ADDED events by a single SORTED event
         events.clear();
@@ -770,8 +771,29 @@ public class DBWriter {
             PodDBAdapter adapter = PodDBAdapter.getInstance();
             adapter.open();
             adapter.setFeedMediaPlaybackInformation(media);
+            sortQueueAfterPlayback(adapter, media);
             adapter.close();
         });
+    }
+
+    private static void sortQueueAfterPlayback(PodDBAdapter adapter, FeedMedia media) {
+        if (!UserPreferences.isQueueKeepSorted() || media.getItemId() == 0) {
+            return;
+        }
+        LongList queueIds = DBReader.getQueueIDList();
+        if (!queueIds.contains(media.getItemId())) {
+            return;
+        }
+        if (media.getPosition() > 0 && queueIds.get(0) == media.getItemId()) {
+            return;
+        }
+        List<FeedItem> queue = DBReader.getQueue();
+        List<QueueEvent> events = new ArrayList<>();
+        applySortOrder(queue, events);
+        adapter.setQueue(queue);
+        for (QueueEvent event : events) {
+            EventBus.getDefault().post(event);
+        }
     }
 
     /**
@@ -903,6 +925,9 @@ public class DBWriter {
             final List<FeedItem> queue = DBReader.getQueue();
 
             permutor.reorder(queue);
+            if (UserPreferences.isQueueKeepSorted()) {
+                LastPlayedFirst.apply(queue);
+            }
             adapter.setQueue(queue);
             if (broadcastUpdate) {
                 EventBus.getDefault().post(QueueEvent.sorted(queue));
