@@ -23,6 +23,7 @@ import de.danoeh.antennapod.model.feed.FeedMedia;
 import de.danoeh.antennapod.model.feed.FeedOrder;
 import de.danoeh.antennapod.model.feed.FeedPreferences;
 import de.danoeh.antennapod.model.feed.SortOrder;
+import de.danoeh.antennapod.storage.preferences.UserPreferences;
 import de.danoeh.antennapod.model.feed.SubscriptionsFilter;
 import de.danoeh.antennapod.model.download.DownloadResult;
 import de.danoeh.antennapod.storage.database.mapper.ChapterCursor;
@@ -413,6 +414,10 @@ public final class DBReader {
     @Nullable
     public static synchronized FeedItem getNextInQueue(FeedItem item) {
         Log.d(TAG, "getNextInQueue() called with: " + "itemId = [" + item.getId() + "]");
+        SortOrder sortOrder = UserPreferences.getQueueKeepSortedOrder();
+        if (UserPreferences.isQueueKeepSorted() && sortOrder != SortOrder.RANDOM) {
+            return getNextInSortedQueue(item, sortOrder);
+        }
         PodDBAdapter adapter = PodDBAdapter.getInstance();
         adapter.open();
         try (FeedItemCursor cursor = new FeedItemCursor(adapter.getNextInQueue(item))) {
@@ -428,6 +433,18 @@ public final class DBReader {
         } finally {
             adapter.close();
         }
+    }
+
+    @Nullable
+    private static FeedItem getNextInSortedQueue(FeedItem item, SortOrder sortOrder) {
+        List<FeedItem> queue = getQueue();
+        FeedItemPermutors.getPermutor(sortOrder).reorder(queue);
+        for (int i = 0; i < queue.size() - 1; i++) {
+            if (queue.get(i).getId() == item.getId()) {
+                return queue.get(i + 1);
+            }
+        }
+        return null;
     }
 
     @NonNull

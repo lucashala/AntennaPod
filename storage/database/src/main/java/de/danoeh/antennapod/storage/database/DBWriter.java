@@ -512,6 +512,9 @@ public class DBWriter {
             }
         }
         if (queueModified) {
+            if (UserPreferences.isQueueKeepSorted() && LastPlayedFirst.apply(queue)) {
+                events.add(QueueEvent.sorted(queue));
+            }
             adapter.setQueue(queue);
             for (QueueEvent event : events) {
                 EventBus.getDefault().post(event);
@@ -661,6 +664,9 @@ public class DBWriter {
             final PodDBAdapter adapter = PodDBAdapter.getInstance();
             adapter.open();
             adapter.setFeedItemsRead(played, resetMediaPosition, items);
+            if (played == FeedItem.PLAYED || resetMediaPosition) {
+                sortQueue(adapter);
+            }
             adapter.close();
             EventBus.getDefault().post(new FeedItemEvent(items, true));
         });
@@ -785,6 +791,16 @@ public class DBWriter {
             return;
         }
         if (media.getPosition() > 0 && queueIds.get(0) == media.getItemId()) {
+            return;
+        }
+        if (media.getItem() != null && media.getItem().isPlayed()) {
+            return;
+        }
+        sortQueue(adapter);
+    }
+
+    private static void sortQueue(PodDBAdapter adapter) {
+        if (!UserPreferences.isQueueKeepSorted()) {
             return;
         }
         List<FeedItem> queue = DBReader.getQueue();

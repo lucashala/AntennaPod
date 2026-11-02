@@ -9,7 +9,7 @@ public final class LastPlayedFirst {
     private LastPlayedFirst() {
     }
 
-    public static void apply(List<FeedItem> queue) {
+    public static boolean apply(List<FeedItem> queue) {
         int lastPlayedIndex = -1;
         long lastPlayedTime = 0;
         for (int i = 0; i < queue.size(); i++) {
@@ -25,6 +25,8 @@ public final class LastPlayedFirst {
         }
         if (lastPlayedIndex > 0) {
             queue.add(0, queue.remove(lastPlayedIndex));
+            return true;
         }
+        return false;
     }
 }

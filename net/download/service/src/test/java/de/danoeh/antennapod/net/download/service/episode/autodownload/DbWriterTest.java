@@ -801,6 +801,49 @@ public class DbWriterTest {
         return feed;
     }
 
+    @Test
+    public void testLastPlayedEpisodeStaysFirstInSortedQueue() throws Exception {
+        UserPreferences.setQueueKeepSorted(true);
+        UserPreferences.setQueueKeepSortedOrder(SortOrder.DATE_OLD_NEW);
+        try {
+            Feed feed = new Feed("url", null, "title");
+            feed.setItems(new ArrayList<>());
+            for (int i = 1; i <= 3; i++) {
+                FeedItem item = new FeedItem(0, "title" + i, "id" + i, "link", new Date(i * 1000L),
+                        FeedItem.UNPLAYED, feed);
+                item.setMedia(new FeedMedia(item, "", 0, ""));
+                feed.getItems().add(item);
+            }
+            withPodDB(adapter -> adapter.setCompleteFeed(feed));
+            FeedItem first = feed.getItems().get(0);
+            FeedItem second = feed.getItems().get(1);
+            FeedItem third = feed.getItems().get(2);
+            DBWriter.addQueueItem(context, first, second, third).get(TIMEOUT, TimeUnit.SECONDS);
+            assertQueueByItemIds("sorted by date", first.getId(), second.getId(), third.getId());
+
+            play(first, 100);
+            play(second, 200);
+            assertQueueByItemIds("last played first", second.getId(), first.getId(), third.getId());
+            assertEquals("skipping continues by date", third.getId(),
+                    DBReader.getNextInQueue(second).getId());
+
+            play(third, 300);
+            assertQueueByItemIds("last played first", third.getId(), first.getId(), second.getId());
+            DBWriter.removeQueueItem(context, false, third).get(TIMEOUT, TimeUnit.SECONDS);
+            assertQueueByItemIds("previous episode returns to front", second.getId(), first.getId());
+        } finally {
+            UserPreferences.setQueueKeepSorted(false);
+        }
+    }
+
+    private static void play(FeedItem item, long timestamp) throws Exception {
+        FeedMedia media = DBReader.getFeedItem(item.getId()).getMedia();
+        media.setPosition(1000);
+        media.setLastPlayedTimeStatistics(timestamp);
+        media.setLastPlayedTimeHistory(new Date(timestamp));
+        DBWriter.setFeedMediaPlaybackInformation(media).get(TIMEOUT, TimeUnit.SECONDS);
+    }
+
     private static void withPodDB(Consumer<PodDBAdapter> action) {
         PodDBAdapter adapter = PodDBAdapter.getInstance();
         try {
