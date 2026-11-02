@@ -24,7 +24,7 @@ jobs:
           sed -i -E "0,/versionCode [0-9]+/s//versionCode $((BASE + GITHUB_RUN_NUMBER))/" app/build.gradle
           sed -i -E "0,/versionName \"([^\"]+)\"/s//versionName \"\1-fronta.$GITHUB_RUN_NUMBER\"/" app/build.gradle
       - name: Queue tests
-        run: ./gradlew --console=plain :storage:database:testDebugUnitTest :net:download:service:testDebugUnitTest
+        run: ./gradlew --console=plain :storage:database:testPlayDebugUnitTest :net:download:service:testPlayDebugUnitTest
       - name: Build
         run: ./gradlew --console=plain :app:assemblePlayRelease
       - name: Publish
