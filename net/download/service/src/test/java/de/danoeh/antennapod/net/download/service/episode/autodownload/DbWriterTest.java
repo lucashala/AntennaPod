@@ -826,6 +826,8 @@ public class DbWriterTest {
             assertQueueByItemIds("last played first", second.getId(), first.getId(), third.getId());
             assertEquals("skipping continues by date", third.getId(),
                     DBReader.getNextInQueue(second).getId());
+            assertEquals("last by date continues with the rest of the queue", first.getId(),
+                    DBReader.getNextInQueue(third).getId());
 
             play(third, 300);
             assertQueueByItemIds("last played first", third.getId(), first.getId(), second.getId());

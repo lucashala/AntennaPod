@@ -438,10 +438,14 @@ public final class DBReader {
     @Nullable
     private static FeedItem getNextInSortedQueue(FeedItem item, SortOrder sortOrder) {
         List<FeedItem> queue = getQueue();
+        if (queue.size() < 2) {
+            return null;
+        }
+        queue.sort((a, b) -> Long.compare(a.getId(), b.getId()));
         FeedItemPermutors.getPermutor(sortOrder).reorder(queue);
-        for (int i = 0; i < queue.size() - 1; i++) {
+        for (int i = 0; i < queue.size(); i++) {
             if (queue.get(i).getId() == item.getId()) {
-                return queue.get(i + 1);
+                return queue.get((i + 1) % queue.size());
             }
         }
         return null;
