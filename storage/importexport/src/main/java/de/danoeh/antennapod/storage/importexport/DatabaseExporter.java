@@ -86,6 +86,11 @@ public class DatabaseExporter {
                 throw new IOException(context.getString(R.string.import_no_downgrade));
             }
             db.close();
+            db = SQLiteDatabase.openDatabase(tempDB.getAbsolutePath(), null, SQLiteDatabase.OPEN_READWRITE);
+            db.execSQL("UPDATE " + PodDBAdapter.TABLE_NAME_FEED_MEDIA
+                    + " SET " + PodDBAdapter.KEY_FILE_URL + " = NULL, " + PodDBAdapter.KEY_DOWNLOAD_DATE + " = 0"
+                    + " WHERE " + PodDBAdapter.KEY_FILE_URL + " LIKE '%/de.danoeh.antennapod/%'");
+            db.close();
 
             File currentDB = context.getDatabasePath(PodDBAdapter.DATABASE_NAME);
             if (!currentDB.delete()) {

@@ -246,6 +246,9 @@ public class DBWriter {
         for (FeedItem item : removedFromQueue) {
             EventBus.getDefault().post(QueueEvent.irreversibleRemoved(item));
         }
+        if (!removedFromQueue.isEmpty()) {
+            sortQueueIfKeepSorted();
+        }
         EventBus.getDefault().post(new FeedItemEvent(deleted, false));
 
         // we assume we also removed download log entries for the feed or its media files.
@@ -357,6 +360,7 @@ public class DBWriter {
                     item.addTag(FeedItem.TAG_QUEUE);
                     EventBus.getDefault().post(QueueEvent.added(item, index));
                     EventBus.getDefault().post(new FeedItemEvent(Collections.singletonList(item), false));
+                    sortQueue(adapter);
                     if (item.isNew()) {
                         DBWriter.markItemsPlayed(FeedItem.UNPLAYED, false, Collections.singletonList(item));
                     }
@@ -793,9 +797,6 @@ public class DBWriter {
         if (media.getPosition() > 0 && queueIds.get(0) == media.getItemId()) {
             return;
         }
-        if (media.getItem() != null && media.getItem().isPlayed()) {
-            return;
-        }
         sortQueue(adapter);
     }
 
@@ -804,12 +805,25 @@ public class DBWriter {
             return;
         }
         List<FeedItem> queue = DBReader.getQueue();
+        List<FeedItem> previousQueue = new ArrayList<>(queue);
         List<QueueEvent> events = new ArrayList<>();
         applySortOrder(queue, events);
+        if (previousQueue.equals(queue)) {
+            return;
+        }
         adapter.setQueue(queue);
         for (QueueEvent event : events) {
             EventBus.getDefault().post(event);
         }
+    }
+
+    public static Future<?> sortQueueIfKeepSorted() {
+        return runOnDbThread(() -> {
+            PodDBAdapter adapter = PodDBAdapter.getInstance();
+            adapter.open();
+            sortQueue(adapter);
+            adapter.close();
+        });
     }
 
     /**

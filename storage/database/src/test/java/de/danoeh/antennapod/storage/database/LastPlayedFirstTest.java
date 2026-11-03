@@ -42,13 +42,14 @@ public class LastPlayedFirstTest {
     }
 
     @Test
-    public void ignoresFinishedEpisode() {
+    public void movesReplayedEpisodeAndIgnoresEpisodeWithoutPosition() {
         List<FeedItem> queue = new ArrayList<>(Arrays.asList(
                 episode(1, 0, 0, false),
                 episode(2, 500, 100, false),
-                episode(3, 900, 300, true)));
+                episode(3, 900, 300, true),
+                episode(4, 0, 400, true)));
         LastPlayedFirst.apply(queue);
-        assertEquals(Arrays.asList(2L, 1L, 3L), ids(queue));
+        assertEquals(Arrays.asList(3L, 1L, 2L, 4L), ids(queue));
     }
 
     @Test

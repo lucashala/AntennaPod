@@ -15,7 +15,7 @@ public final class LastPlayedFirst {
         for (int i = 0; i < queue.size(); i++) {
             FeedItem item = queue.get(i);
             FeedMedia media = item.getMedia();
-            if (media == null || item.isPlayed() || media.getPosition() <= 0) {
+            if (media == null || media.getPosition() <= 0) {
                 continue;
             }
             if (media.getLastPlayedTimeStatistics() > lastPlayedTime) {

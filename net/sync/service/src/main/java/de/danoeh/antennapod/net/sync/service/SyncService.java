@@ -286,6 +286,9 @@ public class SyncService extends Worker {
             }
             FeedMedia media = feedItem.getMedia();
             media.setPosition(action.getPosition() * 1000);
+            if (action.getTimestamp() != null) {
+                media.setLastPlayedTimeStatistics(action.getTimestamp().getTime());
+            }
             if (media.getPosition() > 0 && feedItem.isNew()) {
                 feedItem.setPlayed(false);
             }
@@ -305,6 +308,7 @@ public class SyncService extends Worker {
         DBWriter.removeQueueItem(getApplicationContext(), false, queueToBeRemoved.toArray());
         DBReader.loadFeedDataOfFeedItemList(updatedItems);
         DBWriter.setItemList(updatedItems);
+        DBWriter.sortQueueIfKeepSorted();
     }
 
     private void clearErrorNotifications() {
