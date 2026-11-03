@@ -441,7 +441,7 @@ public final class DBReader {
         if (queue.size() < 2) {
             return null;
         }
-        queue.sort((a, b) -> Long.compare(a.getId(), b.getId()));
+        Collections.sort(queue, (a, b) -> Long.compare(a.getId(), b.getId()));
         FeedItemPermutors.getPermutor(sortOrder).reorder(queue);
         for (int i = 0; i < queue.size(); i++) {
             if (queue.get(i).getId() == item.getId()) {

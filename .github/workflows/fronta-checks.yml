@@ -15,4 +15,4 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
       - name: Checkstyle, Lint, SpotBugs
-        run: ./gradlew --console=plain checkstyle lint spotbugsPlayDebug spotbugsDebug
+        run: ./gradlew --console=plain --continue checkstyle lint spotbugsPlayDebug spotbugsDebug
