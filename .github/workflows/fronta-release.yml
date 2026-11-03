@@ -26,6 +26,8 @@ jobs:
             cp .fronta/release.jks app/keystore
             exit 0
           fi
+          KEY_PASSWORD=$(printf '%s' "$KEY_PASSWORD" | sha256sum | cut -d' ' -f1)
+          echo "::add-mask::$KEY_PASSWORD"
           if [ ! -f .fronta/private.jks ]; then
             keytool -genkeypair -noprompt -dname "cn=AntennaPod Fronta" -alias alias \
               -keystore .fronta/private.jks -storetype PKCS12 -storepass "$KEY_PASSWORD" -keypass "$KEY_PASSWORD" \
