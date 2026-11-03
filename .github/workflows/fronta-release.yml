@@ -3,6 +3,7 @@ name: Fronta release
 on:
   push:
     branches: [ fronta ]
+    paths-ignore: [ '.github/workflows/fronta-*.yml' ]
   workflow_dispatch:
 
 permissions:
