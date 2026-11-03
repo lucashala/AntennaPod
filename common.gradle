@@ -20,7 +20,7 @@ android {
     buildTypes {
         release {
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard.cfg"
-            resValue "string", "app_name", "AntennaPod Fronta"
+            resValue "string", "app_name", "Podkásty"
         }
         debug {
             resValue "string", "app_name", "AntennaPod Debug"
