@@ -17,9 +17,31 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
-      - name: Set version and keystore
+      - name: Signing key
+        env:
+          KEY_PASSWORD: ${{ secrets.FRONTA_KEY_PASSWORD }}
         run: |
-          cp .fronta/release.jks app/keystore
+          if [ -z "$KEY_PASSWORD" ]; then
+            cp .fronta/release.jks app/keystore
+            exit 0
+          fi
+          if [ ! -f .fronta/private.jks ]; then
+            keytool -genkeypair -noprompt -dname "cn=AntennaPod Fronta" -alias alias \
+              -keystore .fronta/private.jks -storetype PKCS12 -storepass "$KEY_PASSWORD" -keypass "$KEY_PASSWORD" \
+              -keyalg RSA -keysize 3072 -validity 15000
+            git rm -q .fronta/release.jks
+            git add .fronta/private.jks
+            git -c user.name="fronta-release" -c user.email="fronta-release@users.noreply.github.com" \
+              commit -q -m "Replace public signing key with password protected key"
+            git push origin HEAD:fronta
+          fi
+          cp .fronta/private.jks app/keystore
+          {
+            echo "ORG_GRADLE_PROJECT_releaseStorePassword=$KEY_PASSWORD"
+            echo "ORG_GRADLE_PROJECT_releaseKeyPassword=$KEY_PASSWORD"
+          } >> "$GITHUB_ENV"
+      - name: Set version
+        run: |
           BASE=$(sed -nE 's/^\s*versionCode ([0-9]+).*/\1/p' app/build.gradle | head -1)
           sed -i -E "0,/versionCode [0-9]+/s//versionCode $((BASE + GITHUB_RUN_NUMBER))/" app/build.gradle
           sed -i -E "0,/versionName \"([^\"]+)\"/s//versionName \"\1-fronta.$GITHUB_RUN_NUMBER\"/" app/build.gradle

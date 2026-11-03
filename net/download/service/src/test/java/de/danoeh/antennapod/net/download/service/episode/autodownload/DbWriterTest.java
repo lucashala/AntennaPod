@@ -838,6 +838,34 @@ public class DbWriterTest {
         }
     }
 
+    @Test
+    public void testSkippingDoesNotLoopWhenEpisodesHaveSameDate() throws Exception {
+        UserPreferences.setQueueKeepSorted(true);
+        UserPreferences.setQueueKeepSortedOrder(SortOrder.DATE_OLD_NEW);
+        try {
+            Feed feed = new Feed("url", null, "title");
+            feed.setItems(new ArrayList<>());
+            for (int i = 1; i <= 3; i++) {
+                FeedItem item = new FeedItem(0, "title" + i, "id" + i, "link", new Date(1000L),
+                        FeedItem.UNPLAYED, feed);
+                item.setMedia(new FeedMedia(item, "", 0, ""));
+                feed.getItems().add(item);
+            }
+            withPodDB(adapter -> adapter.setCompleteFeed(feed));
+            FeedItem first = feed.getItems().get(0);
+            FeedItem second = feed.getItems().get(1);
+            FeedItem third = feed.getItems().get(2);
+            DBWriter.addQueueItem(context, first, second, third).get(TIMEOUT, TimeUnit.SECONDS);
+
+            play(first, 100);
+            play(second, 200);
+            assertEquals("skipping must reach the third episode", third.getId(),
+                    DBReader.getNextInQueue(second).getId());
+        } finally {
+            UserPreferences.setQueueKeepSorted(false);
+        }
+    }
+
     private static void play(FeedItem item, long timestamp) throws Exception {
         FeedMedia media = DBReader.getFeedItem(item.getId()).getMedia();
         media.setPosition(1000);

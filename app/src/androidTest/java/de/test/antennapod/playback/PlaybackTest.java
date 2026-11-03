@@ -145,6 +145,23 @@ public class PlaybackTest {
         startLocalPlayback();
     }
 
+    @Test
+    public void testPausedEpisodeMovesToTopOfSortedQueue() throws Exception {
+        setContinuousPlaybackPreference(false);
+        UserPreferences.setQueueKeepSorted(true);
+        UserPreferences.setQueueKeepSortedOrder(SortOrder.DATE_OLD_NEW);
+        uiTestUtils.addLocalFeedData(true);
+        activityTestRule.launchActivity(new Intent());
+
+        final FeedItem selected = DBReader.getQueue().get(1);
+        final int queueSize = DBReader.getQueue().size();
+        playFromQueue(1);
+        pauseEpisode();
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).until(
+                () -> DBReader.getQueue().get(0).getId() == selected.getId());
+        assertEquals(queueSize, DBReader.getQueue().size());
+    }
+
     protected void setContinuousPlaybackPreference(boolean value) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         prefs.edit().putBoolean(UserPreferences.PREF_FOLLOW_QUEUE, value).commit();
