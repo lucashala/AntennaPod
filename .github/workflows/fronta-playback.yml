@@ -32,7 +32,7 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: ./gradlew --console=plain :app:connectedPlayDebugAndroidTest -PtestBuildType=debug -Pandroid.testInstrumentationRunnerArguments.class=de.test.antennapod.playback.PlaybackTest#testPausedEpisodeMovesToTopOfSortedQueue,de.test.antennapod.playback.PlaybackTest#testContinuousPlaybackOnMultipleEpisodes
+          script: ./gradlew --console=plain :app:connectedPlayDebugAndroidTest -PtestBuildType=debug -Pandroid.testInstrumentationRunnerArguments.class=de.test.antennapod.playback.PlaybackTest#testPausedEpisodeMovesToTopOfSortedQueue,de.test.antennapod.playback.PlaybackTest#testFinishedEpisodeContinuesByDateInSortedQueue
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure()
         with:

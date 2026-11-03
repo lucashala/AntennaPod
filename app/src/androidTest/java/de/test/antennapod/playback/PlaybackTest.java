@@ -15,6 +15,7 @@ import de.danoeh.antennapod.model.feed.FeedItem;
 import de.danoeh.antennapod.model.feed.FeedItemFilter;
 import de.danoeh.antennapod.model.feed.FeedMedia;
 import de.danoeh.antennapod.model.feed.SortOrder;
+import de.danoeh.antennapod.playback.service.PlaybackServiceStarter;
 import de.danoeh.antennapod.storage.database.DBReader;
 import de.danoeh.antennapod.storage.database.DBWriter;
 import de.danoeh.antennapod.storage.database.LongList;
@@ -155,11 +156,31 @@ public class PlaybackTest {
 
         final FeedItem selected = DBReader.getQueue().get(1);
         final int queueSize = DBReader.getQueue().size();
-        playFromQueue(1);
-        pauseEpisode();
+        new PlaybackServiceStarter(context, selected.getMedia()).start();
         Awaitility.await().atMost(5, TimeUnit.SECONDS).until(
+                () -> selected.getMedia().getId() == PlaybackPreferences.getCurrentlyPlayingFeedMediaId());
+        pauseEpisode();
+        Awaitility.await().atMost(10, TimeUnit.SECONDS).until(
                 () -> DBReader.getQueue().get(0).getId() == selected.getId());
         assertEquals(queueSize, DBReader.getQueue().size());
+    }
+
+    @Test
+    public void testFinishedEpisodeContinuesByDateInSortedQueue() throws Exception {
+        setContinuousPlaybackPreference(true);
+        UserPreferences.setQueueKeepSorted(true);
+        UserPreferences.setQueueKeepSortedOrder(SortOrder.DATE_OLD_NEW);
+        uiTestUtils.addLocalFeedData(true);
+        activityTestRule.launchActivity(new Intent());
+
+        List<FeedItem> queue = DBReader.getQueue();
+        final FeedItem selected = queue.get(1);
+        final FeedItem next = queue.get(2);
+        new PlaybackServiceStarter(context, selected.getMedia()).start();
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).until(
+                () -> selected.getMedia().getId() == PlaybackPreferences.getCurrentlyPlayingFeedMediaId());
+        Awaitility.await().atMost(20, TimeUnit.SECONDS).until(
+                () -> next.getMedia().getId() == PlaybackPreferences.getCurrentlyPlayingFeedMediaId());
     }
 
     protected void setContinuousPlaybackPreference(boolean value) {
